@@ -52,3 +52,21 @@ it('disables a coupon, prevents editing it while deleted, and restores its previ
  await as(admin,async()=>{await db.query("select admin_set_record_deleted('coupons','qa-coupon',true)");await expect(db.query("select save_record('coupons','qa-coupon',$1)",[{code:'QA5',percent:5,active:true}])).rejects.toThrow('Restore');await db.query("select admin_set_record_deleted('coupons','qa-coupon',false)");await expect(db.query("select admin_set_record_deleted('payments','anything',true)")).rejects.toThrow('Unsupported');});
  expect((await db.query<{active:boolean}>("select active from coupons where id='qa-coupon'")).rows[0].active).toBe(false);
 });
+
+it('blocks deleting an outlet with an open visit, removes it from clock-in, and restores its activity',async()=>{
+ const company='10000000-0000-4000-8000-000000000001',store='60000000-0000-4000-8000-000000000001',assignment='60000000-0000-4000-8000-000000000002';
+ await db.query("insert into platform_companies(id,slug,name,allow_web_checkin) values($1,'e-edge-direct-2u','Fixture company',true) on conflict(id) do update set allow_web_checkin=true",[company]);
+ await db.query("insert into platform_modules(company_id,module,enabled) values($1,'field_operations',true) on conflict(company_id,module) do update set enabled=true",[company]);
+ await db.query("insert into platform_memberships(company_id,user_id,role) values($1,$2,'field_agent') on conflict(company_id,user_id) do update set role='field_agent',active=true",[company,customer]);
+ await db.query("insert into field_stores(company_id,id,name,address,latitude,longitude,legacy_customer_id) values($1,$2,'Fixture outlet','Fixture address only',7.320975,3.833871,'101')",[company,store]);
+ await db.query("insert into field_assignments(company_id,id,store_id,agent_id,visit_date) values($1,$2,$3,$4,(now() at time zone 'Africa/Lagos')::date)",[company,assignment,store,customer]);
+ await as(customer,()=>db.query('select field_checkin($1,$2,7.320975,3.833871,5,now())',[company,assignment]));
+ await as(admin,async()=>{await expect(db.query("select admin_set_record_deleted('outlets',$1,true)",[store])).rejects.toThrow('Finish the outlet visit');await expect(db.query("select admin_set_record_deleted('legacy_customers','101',true)")).rejects.toThrow('Finish the customer visit');});
+ await db.query('update field_visits set completed_at=now() where company_id=$1',[company]);
+ await as(admin,()=>db.query("select admin_set_record_deleted('legacy_customers','101',true)"));
+ expect((await db.query<{active:boolean}>('select active from field_stores where company_id=$1 and id=$2',[company,store])).rows[0].active).toBe(false);
+ await as(customer,()=>expect(db.query('select field_checkin($1,$2,7.320975,3.833871,5,now())',[company,assignment])).rejects.toThrow('Store unavailable'));
+ await as(admin,()=>db.query("select admin_set_record_deleted('legacy_customers','101',false)"));
+ expect((await db.query<{active:boolean}>('select active from field_stores where company_id=$1 and id=$2',[company,store])).rows[0].active).toBe(true);
+ expect((await db.query('select id from field_visits where company_id=$1',[company])).rows).toHaveLength(1);
+});
