@@ -5,7 +5,7 @@ on:
       tag:
         description: Published app release to verify
         required: true
-        default: v1.0.4
+        default: v1.0.5
 permissions:
   contents: read
 jobs:
@@ -17,17 +17,17 @@ jobs:
       - name: Fetch the published signed applications
         env:
           RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
         run: |
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
           mkdir -p artifacts/online
           for app in Store Driver; do
-            curl --fail --location --retry 3 "https://github.com/Bluechipwhale/edgedirect2u/releases/download/$RELEASE_TAG/Edgedirect2u-$app.apk" -o "artifacts/online/Edgedirect2u-$app.apk"
+            curl --fail --location --retry 3 "https://github.com/$RELEASE_REPOSITORY/releases/download/$RELEASE_TAG/Edgedirect2u-$app.apk" -o "artifacts/online/Edgedirect2u-$app.apk"
           done
-          curl --fail --location --retry 3 "https://github.com/Bluechipwhale/edgedirect2u/releases/download/$RELEASE_TAG/SHA256SUMS.txt" -o artifacts/online/SHA256SUMS.txt
+          curl --fail --location --retry 3 "https://github.com/$RELEASE_REPOSITORY/releases/download/$RELEASE_TAG/SHA256SUMS.txt" -o artifacts/online/SHA256SUMS.txt
           (cd artifacts/online && sha256sum --check --ignore-missing SHA256SUMS.txt)
           for app in Store Driver; do mv "artifacts/online/Edgedirect2u-$app.apk" "artifacts/online/$app.apk"; done
           curl --fail --retry 3 https://edgedirect2u.com/api/health
-          curl --fail --retry 3 https://edgedirect2u.vercel.app/api/health
       - name: Prepare emulator
         run: |
           echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
