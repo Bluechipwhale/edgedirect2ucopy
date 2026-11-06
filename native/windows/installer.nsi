@@ -28,7 +28,7 @@ Section "Store"
   CreateShortcut "$DESKTOP\Edgedirect2u Store.lnk" "$INSTDIR\Edgedirect2u.Store.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Edgedirect2uStore" "DisplayName" "E-Edge Direct 2U Store"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Edgedirect2uStore" "UninstallString" '"$INSTDIR\Uninstall.exe"'
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Edgedirect2uStore" "DisplayVersion" "1.0.4"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Edgedirect2uStore" "DisplayVersion" "1.0.5"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Edgedirect2uStore" "Publisher" "Edgedirect2u"
 SectionEnd
 Section "Uninstall"

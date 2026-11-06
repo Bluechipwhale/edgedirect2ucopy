@@ -48,12 +48,12 @@ export async function catalogue(query = '', category = '', sort = '', page = 1, 
   }
   if (!configured()) return { products: [], count: 0, categories: [] };
   const db = await supabase();
-  const scopedCategories=category?await db.from('categories').select('*').order('sort_order').order('name'):null;
+  const scopedCategories=category?await db.from('categories').select('*').is('archived_at',null).order('sort_order').order('name'):null;
   if(scopedCategories?.error)throw new Error('Catalogue unavailable');
   let req = db.from('storefront_products').select('*', { count: 'exact' }).eq('active', true);
   if (query) req = req.ilike('name', `%${query.replace(/[%_]/g, '')}%`); if (category) req = req.in('category_id',categoryScope(scopedCategories?.data||[],category)); if (merchant) req = req.eq('merchant_id', merchant); if (brand) req = req.eq('brand', brand); req = req.gte('price_kobo', min).lte('price_kobo', max); if (available) req = req.gt('available_stock', 0);
   req = req.order(sort.startsWith('price') ? 'price_kobo' : 'created_at', { ascending: sort === 'price-asc' }).order('id',{ascending:true}).range((page-1)*12, page*12-1);
-  const [result, categories] = await Promise.all([req, scopedCategories||db.from('categories').select('*').order('sort_order').order('name')]);
+  const [result, categories] = await Promise.all([req, scopedCategories||db.from('categories').select('*').is('archived_at',null).order('sort_order').order('name')]);
   let {data,count,error}=result;const cats=categories.data;
   // PostgREST returns 416 for a page beyond the filtered result set. Read the
   // same filtered query's first row to recover its count, without losing scope.

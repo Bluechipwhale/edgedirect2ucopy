@@ -1,4 +1,6 @@
-Version 1.0.4 uses the owner-supplied E-Edge Direct 2U logo for both Android launchers, the Windows executable and installer, and the website/PWA icons. Android adaptive icons keep the complete emblem inside the safe area. The original transparent artwork is preserved in public/brand alongside the resized assets.
+Version 1.0.5 (6 November 2026) retains the existing package IDs, distribution certificate and owner-supplied logo. Android versionCode is 6 and both flavours target Android 16 / API 36. The release now includes signed Store and Driver Android App Bundles (.aab) as well as APKs, and an updated Windows installer. Native user-agent version identification and the Windows reconnect destination are updated. Existing installed wrappers already load the latest online admin/logout, storefront and field-visit features.
+
+The primary website adds administrator-only reversible Delete/Restore controls for brands, empty categories, customer contacts/outlets, customer-directory profiles, banners, coupons, notification configuration, gallery entries and custom pages. Products retain their existing audited deletion. Customer account deletion here means directory removal; it does not erase Auth identities. Finance, payment, order and stock ledgers remain immutable through these controls. Use /admin/trash to restore directory records and /admin/products?state=archived for products.
 
 The apps open the primary website at https://edgedirect2u.com. Vercel remains a trusted backup origin. Android package IDs and the original signing certificate are retained so these installers update previous versions.
 
@@ -7,8 +9,10 @@ The apps open the primary website at https://edgedirect2u.com. Vercel remains a 
 - Password fields: login, registration, staff setup and recovery support accessible show/hide buttons without submitting or changing the password.
 - Windows store app: the primary domain is used for shopping and administration.
 
-Use /apps for the current installers and SHA-256 checksums. Driver access requires an approved, confirmed account and assigned customers or deliveries. GPS check-in also requires location permission, a sufficiently accurate device location, a saved outlet location and company authorization. Device permission alone does not bypass those checks.
+Use the release assets for the updated installers and SHA-256 checksums. Driver access requires an approved, confirmed account and assigned customers or deliveries. GPS check-in also requires location permission, a sufficiently accurate device location, a saved outlet location and company authorization. Device permission alone does not bypass those checks.
 
 The apps require an internet connection. No background tracking, offline mutation queue, SMS delivery or push-notification service is claimed. APK compilation, unit tests, lint and emulator launch checks run before publication; an actual device visit and a real payment/refund acceptance test must still be commissioned by the business. Catalogue drafts require approved selling prices and real stock before purchases can start.
 
 Android installers are signed for direct installation. Google Play publication is separate. The Windows installer remains unsigned; compare its checksum with SHA256SUMS.txt. The shared Paystack webhook for the existing Nexzek store is preserved.
+
+Google Play: upload the .aab, not the direct-install APK. Play Console ownership/verification, Play App Signing enrollment using the existing app identity, listing artwork, Data safety and content declarations, privacy/account-deletion compliance, reviewer access and any Console-mandated testing remain owner commissioning steps. Build success is not Play approval. If enrolling with a different Play app-signing certificate, register its public certificate in verified app links before rollout; do not silently replace the existing direct-install identity.

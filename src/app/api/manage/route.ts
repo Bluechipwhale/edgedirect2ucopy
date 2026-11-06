@@ -16,10 +16,10 @@ export async function POST(req:Request){try{guard(req);const a=(await actor())!;
 
 export async function PATCH(req:Request){try{
   guard(req);
-  const a=await requirePermission('catalogue.edit');
-  const input=z.object({kind:z.literal('products'),id:z.string().min(1).max(100),archive:z.boolean()}).parse(await req.json());
-  if(await localMode())localStore().archiveProduct(a,input.id,input.archive);
-  else {const {error}=await(await supabase()).rpc('set_product_archived',{p_id:input.id,p_archive:input.archive});if(error)throw new Error(error.message);}
+  const input=z.object({kind:z.enum(['products','brands','categories','legacy_customers','customers','outlets','banners','coupons','notifications','gallery','pages']),id:z.string().min(1).max(100),archive:z.boolean()}).parse(await req.json());
+  const a=input.kind==='products'?await requirePermission('catalogue.edit'):await requireRole(['admin']);
+  if(await localMode()){if(input.kind!=='products')throw new Error('Directory deletion requires the production database');localStore().archiveProduct(a,input.id,input.archive);}
+  else {const db=await supabase();const {error}=input.kind==='products'?await db.rpc('set_product_archived',{p_id:input.id,p_archive:input.archive}):await db.rpc('admin_set_record_deleted',{p_kind:input.kind,p_id:input.id,p_deleted:input.archive});if(error)throw new Error(error.message);}
   return NextResponse.json({ok:true,id:input.id,archived:input.archive},{headers:{'Cache-Control':'no-store'}});
 }catch(e){return failure(e);}}
 

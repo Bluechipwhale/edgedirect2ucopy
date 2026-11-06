@@ -5,7 +5,7 @@ on:
       tag:
         description: Release tag matching the native app version
         required: true
-        default: v1.0.4
+        default: v1.0.5
 permissions:
   contents: read
 jobs:
@@ -46,12 +46,14 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle --no-daemon -p native/android testStoreReleaseUnitTest testDriverReleaseUnitTest lintStoreRelease lintDriverRelease assembleStoreRelease assembleDriverRelease
+        run: gradle --no-daemon -p native/android testStoreReleaseUnitTest testDriverReleaseUnitTest lintStoreRelease lintDriverRelease assembleStoreRelease assembleDriverRelease bundleStoreRelease bundleDriverRelease
       - name: Verify distribution signatures
         run: |
           mkdir -p artifacts/native
           cp native/android/app/build/outputs/apk/store/release/app-store-release.apk artifacts/native/Edgedirect2u-Store.apk
           cp native/android/app/build/outputs/apk/driver/release/app-driver-release.apk artifacts/native/Edgedirect2u-Driver.apk
+          cp native/android/app/build/outputs/bundle/storeRelease/app-store-release.aab artifacts/native/Edgedirect2u-Store.aab
+          cp native/android/app/build/outputs/bundle/driverRelease/app-driver-release.aab artifacts/native/Edgedirect2u-Driver.aab
           python3 - <<'PY'
           import os,json,re,subprocess
           expected=json.load(open('public/.well-known/assetlinks.json'))[0]['target']['sha256_cert_fingerprints'][0].replace(':','').lower()
@@ -61,6 +63,12 @@ jobs:
             actual=re.search(r'certificate SHA-256 digest: ([a-fA-F0-9]+)',output).group(1).lower()
             if actual!=expected: raise SystemExit('Distribution certificate does not match approved app links')
             print(name+' APK signature verified against the public app-link certificate')
+            bundle='artifacts/native/Edgedirect2u-'+name+'.aab'
+            subprocess.check_call(['jarsigner','-verify',bundle])
+            cert=subprocess.check_output(['keytool','-printcert','-jarfile',bundle],text=True)
+            digest=re.search(r'SHA256:\s*([A-Fa-f0-9:]+)',cert).group(1).replace(':','').lower()
+            if digest!=expected: raise SystemExit('Bundle signing certificate mismatch')
+            print(name+' AAB signing identity verified')
           PY
       - name: Launch apps in Android emulator
         env:
@@ -113,7 +121,9 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: android-apps
-          path: artifacts/native/*.apk
+          path: |
+            artifacts/native/*.apk
+            artifacts/native/*.aab
           if-no-files-found: error
   windows:
     runs-on: windows-latest
@@ -175,10 +185,11 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Use a version tag such as v1.0.0'; exit 1; }
+          test "$(sed -n "s/.*versionName '\([^']*\)'.*/v\1/p" native/android/app/build.gradle | xargs)" = "$RELEASE_TAG" || { echo 'Release tag does not match app version'; exit 1; }
           cd artifacts/native
-          sha256sum Edgedirect2u-Store.apk Edgedirect2u-Driver.apk Edgedirect2u-Store-Setup.exe > SHA256SUMS.txt
+          sha256sum Edgedirect2u-Store.apk Edgedirect2u-Driver.apk Edgedirect2u-Store.aab Edgedirect2u-Driver.aab Edgedirect2u-Store-Setup.exe > SHA256SUMS.txt
           cd ../..
           if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Edgedirect2u apps $RELEASE_TAG" --notes-file docs/APP-RELEASE.md
           fi
-          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" artifacts/native/Edgedirect2u-Store.apk artifacts/native/Edgedirect2u-Driver.apk artifacts/native/Edgedirect2u-Store-Setup.exe artifacts/native/SHA256SUMS.txt --clobber
+          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" artifacts/native/Edgedirect2u-Store.apk artifacts/native/Edgedirect2u-Driver.apk artifacts/native/Edgedirect2u-Store-Setup.exe artifacts/native/Edgedirect2u-Store.aab artifacts/native/Edgedirect2u-Driver.aab artifacts/native/SHA256SUMS.txt --clobber

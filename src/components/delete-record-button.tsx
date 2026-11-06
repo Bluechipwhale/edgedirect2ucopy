@@ -1,0 +1,11 @@
+'use client';
+import {useState,useTransition} from 'react';
+import {useRouter} from 'next/navigation';
+import {Trash2,RotateCcw} from 'lucide-react';
+import {requestJson} from '@/lib/client-request';
+export function DeleteRecordButton({kind,id,name,deleted=false,onSaved}:{kind:string;id:string;name:string;deleted?:boolean;onSaved?:()=>void}){
+ const [confirm,setConfirm]=useState(false),[saving,setSaving]=useState(false),[error,setError]=useState('');
+ const [refreshing,startTransition]=useTransition();const router=useRouter(),busy=saving||refreshing;
+ async function save(){if(busy)return;setSaving(true);setError('');try{await requestJson('/api/manage',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,id,archive:!deleted})});setConfirm(false);onSaved?.();startTransition(()=>router.refresh());}catch(e){setError(e instanceof Error?e.message:'Unable to update record');}finally{setSaving(false);}}
+ return <><button type="button" className="small-button" disabled={busy} onClick={()=>{setError('');setConfirm(true);}}>{deleted?<RotateCcw size={14}/>:<Trash2 size={14}/>} {deleted?'Restore':'Delete'}</button>{confirm&&<div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true" aria-label={deleted?'Restore record':'Delete record'}><h2>{deleted?'Restore':'Delete'} {name}</h2><p>{deleted?'Restore this record to its previous state?':kind==='customers'?'Remove this customer from the active admin directory? Their sign-in, orders and payment history remain intact. This does not close their account.':kind==='legacy_customers'||kind==='outlets'?'Remove this customer from active visits and routes? Open visits must be finished first. Contact details and visit history are retained so you can restore it.':'Remove this record from active use? Past transactions are retained and the record can be restored.'}</p>{error&&<p className="error-message" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="small-button" disabled={busy} onClick={()=>setConfirm(false)}>Cancel</button><button type="button" className="button" disabled={busy} onClick={()=>void save()}>{busy?'Saving…':deleted?'Restore record':'Delete record'}</button></div></section></div>}</>;
+}
