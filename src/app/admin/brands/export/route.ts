@@ -12,7 +12,7 @@ export async function GET(request:Request){
    }
   }
   if(new Set(rows.map(r=>r.id)).size!==rows.length)throw Error('Registry changed');
-  const headers=['id','name','display_name','logo_url','description','active','product_count'];
+  const headers=['id','name','display_name','logo_url','description','active','product_count','archived_at'];
   const csv=[headers.map(customerCsvCell).join(','),...rows.map(r=>headers.map(k=>customerCsvCell(r[k])).join(','))].join('\r\n');
   return new Response('\ufeff'+csv+'\r\n',{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="brand-registry.csv"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
  }catch{return new Response('Brand export unavailable; sign in as an administrator and retry',{status:403,headers:{'Cache-Control':'private, no-store'}});}
