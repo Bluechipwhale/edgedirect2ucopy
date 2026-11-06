@@ -5,3 +5,10 @@
 @media(max-width:768px){.product-search .input-icon,.product-search select{width:100%;max-width:none}.product-search>span{margin-left:0;width:100%}}
 .product-options-editor{border:1px solid #e8e8f0;border-radius:12px;padding:18px;margin:18px 0}.product-options-editor legend{font-weight:650;padding:0 6px}.product-option-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:12px;align-items:end;margin-bottom:14px}.product-option-row label{margin:0}.product-option-row button{margin-bottom:2px}@media(max-width:600px){.product-option-row{grid-template-columns:1fr}.product-option-row button{justify-self:start}}
 .product-table table{min-width:1050px}.product-table th,.product-table td{vertical-align:middle}.product-table td:nth-child(2) code{white-space:nowrap}.product-table td:nth-child(4){min-width:240px;overflow-wrap:normal;font-weight:550;line-height:1.6}.product-table td:nth-child(5){min-width:110px;overflow-wrap:normal}.product-table td:nth-child(6){min-width:150px;overflow-wrap:normal}.product-table td:nth-child(7){white-space:nowrap;font-variant-numeric:tabular-nums}.product-table th:last-child,.product-table td:last-child{position:sticky;right:0;background:#fff;box-shadow:-8px 0 15px -12px #201b36;min-width:100px}.product-table th:last-child{background:#faf9fc}.product-table .product-row-actions{justify-content:center;gap:10px}.product-table .product-row-actions .icon-btn{min-width:38px;min-height:38px;border:1px solid #e8e8f0;border-radius:8px}.product-table .product-row-actions .icon-btn:hover{border-color:#e9b59e;background:#fff4ef}
+
+/* Keep recovery actions readable when an administrator uses a narrow window. */
+.record-delete-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;flex:0 0 auto;min-width:78px;min-height:36px}
+.record-delete-button svg{flex-shrink:0}
+.resource-table code{white-space:nowrap}
+.resource-table th:last-child,.resource-table td:last-child{position:sticky;right:0;min-width:128px;background:#fff;box-shadow:-8px 0 15px -12px #201b36}
+.resource-table th:last-child{background:#faf9fc}
