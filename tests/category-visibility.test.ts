@@ -29,6 +29,15 @@ it('only exposes populated branches, including out-of-stock published products, 
  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[admin]);await db.exec('set role authenticated');
  try{expect((await db.query('select * from categories')).rows).toHaveLength(17);expect(await db.query("select * from categories where id='legacy-category-review'")).toMatchObject({rows:[{id:'legacy-category-review'}]});}finally{await db.exec('reset role');}
 });
+it('hides explicitly disabled category branches without changing their products or management access',async()=>{
+ const products=(await db.query('select * from products order by id')).rows;
+ await db.exec("update categories set storefront_hidden=true where id='root'");expect(await visible()).toEqual([]);
+ await db.query("select set_config('request.jwt.claim.sub',$1,false)",[admin]);await db.exec('set role authenticated');
+ try{expect((await db.query("select * from categories where id='root'")).rows).toHaveLength(1);}finally{await db.exec('reset role');}
+ expect((await db.query('select * from products order by id')).rows).toEqual(products);
+ await db.exec("update categories set storefront_hidden=false where id='root'");expect(await visible()).toEqual(['child','leaf','root']);
+ await db.exec('set role anon');try{await expect(db.query('select * from catalogue_external_sources')).rejects.toThrow('permission denied');}finally{await db.exec('reset role');}
+});
 it('updates visibility automatically after publication changes without altering category records',async()=>{
  const before=(await db.query('select * from categories order by id')).rows;
  await db.exec("update products set active=true where category_id='draft'");expect(await visible()).toEqual(['child','draft','leaf','root']);
@@ -39,6 +48,7 @@ it('keeps the local category directory and navigation consistent with the public
  const categories=[{id:'parent',name:'Parent'},{id:'child',name:'Child',parent_id:'parent'},{id:'empty',name:'Empty'},{id:'legacy-category-review',name:'Imported products — category review'}].map(r=>({...r,image:'/icon.svg'})) as Category[];
  const products=[{category_id:'child',active:true,merchant_id:'edge',stock:0},{category_id:'empty',active:false,merchant_id:'edge'},{category_id:'legacy-category-review',active:true,merchant_id:'edge'}] as Product[];
  const visible=customerCategories(categories,products,new Set(['edge']));expect(visible.map(r=>r.id).sort()).toEqual(['child','parent']);
+ expect(customerCategories(categories.map(r=>r.id==='parent'?{...r,storefront_hidden:true}:r),products,new Set(['edge']))).toEqual([]);
  const links=['/categories/empty','/categories/child','/products?category=legacy-category-review','/products','/contact','https://external.example/categories/empty'].map(href=>({href}));
  expect(customerCategoryLinks(links,new Set(visible.map(r=>r.id)),'https://edgedirect2u.com').map(r=>r.href)).toEqual(['/categories/child','/products','/contact','https://external.example/categories/empty']);
 });

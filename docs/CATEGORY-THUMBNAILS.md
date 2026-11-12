@@ -1,6 +1,6 @@
 # Category thumbnails — 12 November 2026
 
-At the owner's request, the category images have been restored to the original product photos shown before the generated editorial thumbnails. The six original category photographs, including Fashion, Food & groceries, Beauty & care and Sports & fitness, remain unchanged. This restoration does not change the category visibility rules below.
+At the owner's request, the category images have been restored to the original product photos shown before the generated editorial thumbnails. Food and Nutrition subsequently uses the owner's supplied Fish in a Box photograph for the Eedgefoods catalogue. The six original category photographs, including Fashion, Food & groceries, Beauty & care and Sports & fitness, remain unchanged.
 
 `data/category-thumbnails.json` records each category's original reference product, source, checksum, public Supabase URL and local fallback path. Product photos use contain presentation so packaging remains visible. First-party fallback copies remain in `public/images/category-thumbnails`.
 
@@ -10,7 +10,7 @@ Production stores absolute Supabase image URLs so another deployment using the s
 
 Administrators can override thumbnails at `/admin/categories`, including by uploading a photo in the existing editor. A valid custom image takes precedence over the fallback. Image changes do not change product classification, prices, stock, publication or staff permissions. Mixed legacy categories retain their existing contents.
 
-Migration 047 adds the customer category directory. Imported products — category review and its descendants are always hidden. Archived categories and categories with no active, unarchived products from approved merchants are hidden; populated ancestors remain visible up to the supported three levels. Out-of-stock published products still count as category contents. Visibility changes automatically when products are published or withdrawn. Empty categories' records and photos remain intact, ready to reappear after publication.
+Migration 047 adds the customer category directory; migration 048 adds an explicit admin visibility checkbox. Imported products — category review and its descendants are always hidden. Explicitly hidden branches, archived categories and categories with no active, unarchived products from approved merchants are hidden; populated ancestors remain visible up to the supported three levels. Out-of-stock published products still count as category contents. Visibility changes automatically when products are published or withdrawn, unless the branch is explicitly hidden. Empty categories' records and photos remain intact, ready to reappear after publication. Food and Beverages is explicitly hidden at the owner's request.
 
 The storefront grid, filters, breadcrumbs, sitemap and category navigation use the public directory even when an administrator shops. Public category RLS follows the same rule. Management category selectors and exports use a separate authorized directory so administrators can still manage empty and review categories. No products are deleted, published or reclassified by this release.
 

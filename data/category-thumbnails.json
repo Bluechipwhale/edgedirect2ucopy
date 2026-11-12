@@ -42,12 +42,12 @@
   {
     "categoryId": "legacy-category-3",
     "category": "Food and Nutrition",
-    "productId": "legacy-catalog-41",
-    "product": "Big Bull Rice 50 KG",
-    "image": "https://itdpkfnuyxzqswctlsar.supabase.co/storage/v1/object/public/brand-assets/category-thumbnails/legacy-category-3-be6192242116.jpg",
-    "fallback": "/images/category-thumbnails/legacy-category-3-be6192242116.jpg",
-    "source": "https://itdpkfnuyxzqswctlsar.supabase.co/storage/v1/object/public/brand-assets/legacy-products/be6192242116a9b0eef3de9cc3a6aa9b5b4797ef1fa2f9120bcccaaa2681791a.jpeg",
-    "sha256": "be6192242116a9b0eef3de9cc3a6aa9b5b4797ef1fa2f9120bcccaaa2681791a"
+    "productId": "eedgefoods-3673",
+    "product": "Fish in a Box (MAXI)",
+    "image": "https://itdpkfnuyxzqswctlsar.supabase.co/storage/v1/object/public/brand-assets/category-thumbnails/legacy-category-3-eedgefoods-fish-d2be86c3ef92.webp",
+    "fallback": "/images/category-thumbnails/legacy-category-3-eedgefoods-fish-d2be86c3ef92.webp",
+    "source": "Owner-provided Fish in a Box photograph",
+    "sha256": "d2be86c3ef9297e618d6892bb11e732b26c8038185c04cbea044cb8fe131f196"
   },
   {
     "categoryId": "legacy-category-2",
