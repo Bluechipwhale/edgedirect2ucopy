@@ -9,6 +9,7 @@ import type { Actor, Category, Product, RecordRow, Order } from './types';
 import {cataloguePage,cataloguePrice} from './catalogue-query';
 import {categoryScope} from './category-tree';
 import {customerCategories} from './category-visibility';
+import {homepageProductSelection} from './homepage-products';
 import {commercePermissions,type CommercePermission,type CommerceContext} from './commerce-permissions';
 
 export function configured() { return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY); }
@@ -73,6 +74,28 @@ export async function catalogue(query = '', category = '', sort = '', page = 1, 
   }
   if (error) throw new Error('Catalogue unavailable');
   return { products: (data || []) as Product[], count: count || 0, categories };
+}
+export async function homepageCatalogue():Promise<{products:Product[];count:number;categories:Category[]}>{
+  const {importPrefix,existingProductSlots,featuredImportSlots}=homepageProductSelection;
+  let existing:Product[],additions:Product[],categories:Category[];
+  if(await localMode()){
+    const owners=new Set(localStore().list<RecordRow>('merchants').filter(row=>row.data.status==='approved').map(row=>row.id));
+    const all=localStore().list<Product>('products').filter(p=>p.active&&!p.archived_at&&owners.has(p.merchant_id));
+    existing=all.filter(p=>!p.id.startsWith(importPrefix)).sort((a,b)=>b.created_at.localeCompare(a.created_at)||a.id.localeCompare(b.id)).slice(0,existingProductSlots);
+    additions=all.filter(p=>p.id.startsWith(importPrefix)&&p.featured).sort((a,b)=>b.created_at.localeCompare(a.created_at)||a.id.localeCompare(b.id)).slice(0,featuredImportSlots);categories=await storefrontCategories();
+  }else{
+    if(!configured())return {products:[],count:0,categories:[]};
+    const db=await supabase();
+    const [old,selected,directory]=await Promise.all([
+      db.from('storefront_products').select('*').eq('active',true).not('id','like',importPrefix+'%').order('created_at',{ascending:false}).order('id',{ascending:true}).range(0,existingProductSlots-1),
+      db.from('storefront_products').select('*').eq('active',true).like('id',importPrefix+'%').eq('featured',true).order('created_at',{ascending:false}).order('id',{ascending:true}).range(0,featuredImportSlots-1),
+      storefrontCategories(),
+    ]);
+    if(old.error||selected.error)throw new Error('Homepage catalogue unavailable');
+    existing=(old.data||[]) as Product[];additions=(selected.data||[]) as Product[];categories=directory;
+  }
+  const products=[...existing,...additions];
+  return {products,count:products.length,categories};
 }
 export async function product(slug: string) { if (await localMode()) return localStore().list<Product>('products').find(p => p.slug === slug && p.active); if (!configured()) return undefined; const { data } = await (await supabase()).from('storefront_products').select('*').eq('slug', slug).eq('active', true).single(); return data as Product | undefined; }
 export async function records(kind: string,publicView=false): Promise<RecordRow[]> {
