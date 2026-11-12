@@ -1,8 +1,10 @@
 # Category thumbnails — 12 November 2026
 
-Twelve category images now use original, visually reviewed editorial still-life photographs generated with the built-in image_gen tool: baby care, oils, dairy, food and beverages, nutrition, groceries, cleaning, laundry, drinks, personal care, snacks and toiletries. Each photo uses category-appropriate objects, coordinated studio colours and natural light. These are category illustrations, not representations of particular product packaging. The six original category photographs, including Fashion, Food & groceries, Beauty & care and Sports & fitness, remain unchanged.
+At the owner's request, the category images have been restored to the original product photos shown before the generated editorial thumbnails. The six original category photographs, including Fashion, Food & groceries, Beauty & care and Sports & fitness, remain unchanged. This restoration does not change the category visibility rules below.
 
-`data/category-thumbnails.json` records each category, generation provenance, checksum, public Supabase URL, local fallback path and crop position. Generated masters are copied unchanged into `public/images/category-editorial`. They use edge-to-edge cover presentation with intentional crop positions; existing product packshot fallbacks remain available in `public/images/category-thumbnails`. The exact generation prompts and workspace paths are saved in `outputs/category-editorial-20261112/prompts.json` locally.
+`data/category-thumbnails.json` records each category's original reference product, source, checksum, public Supabase URL and local fallback path. Product photos use contain presentation so packaging remains visible. First-party fallback copies remain in `public/images/category-thumbnails`.
+
+All 12 unused editorial images are preserved unchanged in the laptop's Pictures folder, `E-Edge Direct 2U - Generated Category Images - 12 Nov 2026`. That folder includes descriptive filenames, generation prompts and SHA-256 checksums. The project copies also remain in `public/images/category-editorial` for future use; they are no longer referenced by the category manifest.
 
 Production stores absolute Supabase image URLs so another deployment using the same database can render the pictures without receiving new static files. Empty/placeholder values use the matching local fallback; failed custom URLs retry the fallback once, then show an accessible category symbol instead of a broken browser image.
 
