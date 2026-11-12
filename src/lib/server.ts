@@ -8,6 +8,7 @@ import { defaultTheme, themeSchema, type Theme } from './theme';
 import type { Actor, Category, Product, RecordRow, Order } from './types';
 import {cataloguePage,cataloguePrice} from './catalogue-query';
 import {categoryScope} from './category-tree';
+import {customerCategories} from './category-visibility';
 import {commercePermissions,type CommercePermission,type CommerceContext} from './commerce-permissions';
 
 export function configured() { return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY); }
@@ -38,30 +39,40 @@ export async function publishedTheme(): Promise<Theme> {
   if (!configured()) return defaultTheme;
   try { const db = await supabase(); const { data } = await db.from('website_settings').select('config').eq('id', 'published').single(); const parsed = themeSchema.safeParse(data?.config); return parsed.success ? parsed.data : defaultTheme; } catch { return defaultTheme; }
 }
+export async function storefrontCategories():Promise<Category[]>{
+  if(await localMode())return customerCategories(localStore().list<Category>('categories'),localStore().list<Product>('products'),new Set(localStore().list<RecordRow>('merchants').filter(row=>row.data.status==='approved').map(row=>row.id)));
+  if(!configured())return [];
+  const {data,error}=await(await supabase()).rpc('storefront_categories');if(error)throw new Error('Catalogue unavailable');return (data||[]) as Category[];
+}
+export async function managementCategories():Promise<Category[]>{
+  const a=(await actor())!;if(!['admin','operations','merchant'].includes(a.role))await requirePermission('catalogue.read');
+  if(await localMode())return localStore().list<Category>('categories').sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||a.name.localeCompare(b.name));
+  const {data,error}=await(await supabase()).from('categories').select('*').is('archived_at',null).order('sort_order').order('name');if(error)throw new Error('Category manager unavailable');return (data||[]) as Category[];
+}
 export async function catalogue(query = '', category = '', sort = '', page = 1, merchant = '', min = 0, max = Number.MAX_SAFE_INTEGER, brand = '', available = false): Promise<{ products: Product[]; count: number; categories: Category[] }> {
   page=cataloguePage(page);min=cataloguePrice(min,0);max=cataloguePrice(max,Number.MAX_SAFE_INTEGER);
   if (await localMode()) {
-    const scope=categoryScope(localStore().list<Category>('categories'),category);
+    const categories=await storefrontCategories();
+    const scope=categories.some(c=>c.id===category)?categoryScope(categories,category):[];
     const p = localStore().list<Product>('products').filter(p => p.active && (!query || `${p.name} ${p.brand}`.toLowerCase().includes(query.toLowerCase())) && (!category || scope.includes(p.category_id)) && (!merchant || p.merchant_id === merchant) && p.price_kobo >= min && p.price_kobo <= max && (!brand || p.brand === brand) && (!available || p.stock > p.reserved));
     p.sort((a,b)=>(sort==='price-asc'?a.price_kobo-b.price_kobo:sort==='price-desc'?b.price_kobo-a.price_kobo:b.created_at.localeCompare(a.created_at))||a.id.localeCompare(b.id));
-    return { products: p.slice((page-1)*12, page*12), count: p.length, categories: localStore().list<Category>('categories').sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||a.name.localeCompare(b.name)) };
+    return { products: p.slice((page-1)*12, page*12), count: p.length, categories };
   }
   if (!configured()) return { products: [], count: 0, categories: [] };
   const db = await supabase();
-  const scopedCategories=category?await db.from('categories').select('*').is('archived_at',null).order('sort_order').order('name'):null;
-  if(scopedCategories?.error)throw new Error('Catalogue unavailable');
+  const categories=await storefrontCategories();
   let req = db.from('storefront_products').select('*', { count: 'exact' }).eq('active', true);
-  if (query) req = req.ilike('name', `%${query.replace(/[%_]/g, '')}%`); if (category) req = req.in('category_id',categoryScope(scopedCategories?.data||[],category)); if (merchant) req = req.eq('merchant_id', merchant); if (brand) req = req.eq('brand', brand); req = req.gte('price_kobo', min).lte('price_kobo', max); if (available) req = req.gt('available_stock', 0);
+  if (query) req = req.ilike('name', `%${query.replace(/[%_]/g, '')}%`); if (category) req = req.in('category_id',categories.some(c=>c.id===category)?categoryScope(categories,category):[]); if (merchant) req = req.eq('merchant_id', merchant); if (brand) req = req.eq('brand', brand); req = req.gte('price_kobo', min).lte('price_kobo', max); if (available) req = req.gt('available_stock', 0);
   req = req.order(sort.startsWith('price') ? 'price_kobo' : 'created_at', { ascending: sort === 'price-asc' }).order('id',{ascending:true}).range((page-1)*12, page*12-1);
-  const [result, categories] = await Promise.all([req, scopedCategories||db.from('categories').select('*').is('archived_at',null).order('sort_order').order('name')]);
-  let {data,count,error}=result;const cats=categories.data;
+  const result=await req;
+  let {data,count,error}=result;
   // PostgREST returns 416 for a page beyond the filtered result set. Read the
   // same filtered query's first row to recover its count, without losing scope.
   if(error?.code==='PGRST103'){
     const first=await req.range(0,0);error=first.error;count=first.count;data=[];
   }
   if (error) throw new Error('Catalogue unavailable');
-  return { products: (data || []) as Product[], count: count || 0, categories: (cats || []) as Category[] };
+  return { products: (data || []) as Product[], count: count || 0, categories };
 }
 export async function product(slug: string) { if (await localMode()) return localStore().list<Product>('products').find(p => p.slug === slug && p.active); if (!configured()) return undefined; const { data } = await (await supabase()).from('storefront_products').select('*').eq('slug', slug).eq('active', true).single(); return data as Product | undefined; }
 export async function records(kind: string,publicView=false): Promise<RecordRow[]> {

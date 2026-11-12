@@ -1,5 +1,5 @@
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
-const {client,query}=vi.hoisted(()=>({client:{from:vi.fn()},query:vi.fn()}));
+const {client,query}=vi.hoisted(()=>({client:{from:vi.fn(),rpc:vi.fn()},query:vi.fn()}));
 vi.mock('@supabase/ssr',()=>({createServerClient:()=>client}));
 vi.mock('next/headers',()=>({headers:async()=>new Headers({host:'catalogue.example.com'}),cookies:async()=>({getAll:()=>[],set:()=>{}})}));
 import {catalogue} from '../src/lib/server';
@@ -7,6 +7,7 @@ let filters:unknown[][],ranges:number[][];
 beforeEach(()=>{
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL','https://example.supabase.co');vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY','public-test-key');
   vi.clearAllMocks();filters=[];ranges=[];
+  client.rpc.mockResolvedValue({data:[],error:null});
   client.from.mockImplementation((table:string)=>{
     if(table==='categories'){const categories={select:()=>categories,is:(...v:unknown[])=>{filters.push(v);return categories;},order:()=>categories,then:(resolve:(v:unknown)=>void)=>Promise.resolve({data:[]}).then(resolve)};return categories;}
     const builder={select:()=>builder,eq:(...v:unknown[])=>{filters.push(v);return builder;},gte:()=>builder,lte:()=>builder,gt:()=>builder,ilike:()=>builder,order:()=>builder,range:(a:number,b:number)=>{ranges.push([a,b]);return builder;},then:(resolve:(v:unknown)=>void)=>Promise.resolve(query(ranges.at(-1))).then(resolve)};

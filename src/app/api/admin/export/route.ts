@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {requireRole,requirePermission,localMode,supabase,catalogue,records,adminProductCatalogue,orders} from '@/lib/server';
+import {requireRole,requirePermission,localMode,supabase,managementCategories,records,adminProductCatalogue,orders} from '@/lib/server';
 import {resourceFields} from '@/lib/resources';
 import {csv} from '@/lib/business';
 import {failure} from '@/lib/http';
@@ -15,7 +15,7 @@ export async function GET(req:Request){try{
  if(input.kind==='products'){
   const first=await adminProductCatalogue(a,1,input.q,input.state,input.owner);rows=first.products as unknown as Record<string,unknown>[];
   for(let page=2;rows.length<first.count;page++){if(req.signal.aborted)throw new Error('Export cancelled');const next=await adminProductCatalogue(a,page,input.q,input.state,input.owner);if(next.count!==first.count||!next.products.length)throw new Error('Catalogue changed during export. Please retry.');rows.push(...next.products as unknown as Record<string,unknown>[]);}
- }else if(input.kind==='categories')rows=(await catalogue()).categories as unknown as Record<string,unknown>[];
+ }else if(input.kind==='categories')rows=await managementCategories() as unknown as Record<string,unknown>[];
  else if(input.kind==='orders'&&await localMode())rows=await orders(a) as unknown as Record<string,unknown>[];
  else if(input.kind==='profiles'&&!await localMode()){
   const db=await supabase();let total:number|null=null;

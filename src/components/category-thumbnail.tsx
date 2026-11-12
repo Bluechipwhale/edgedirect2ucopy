@@ -12,6 +12,7 @@ export function CategoryThumbnail({id,name,image}:{id:string;name:string;image:s
  const choices=[image,reference?.fallback].filter(usable) as string[];
  const source=choices.find(value=>!failed.includes(value));
  if(!source)return <span className="category-image-fallback" role="img" aria-label={name}><ShoppingBasket size={36} aria-hidden="true"/></span>;
+ const editorial=reference?.presentation==='cover'&&(source===reference.image||source===reference.fallback);
  const productPhoto=source.includes('/category-thumbnails/');
- return <Image src={source} alt={name} fill sizes="(max-width:600px) 33vw, 16vw" unoptimized={!canOptimize(source)} style={productPhoto?{objectFit:'contain',padding:8,background:'#fff'}:undefined} onError={()=>setFailed(current=>current.includes(source)?current:[...current,source])}/>;
+ return <Image src={source} alt={name} fill sizes="(max-width:600px) 33vw, 16vw" unoptimized={!canOptimize(source)} style={editorial?{objectFit:'cover',objectPosition:reference.objectPosition}:productPhoto?{objectFit:'contain',padding:8,background:'#fff'}:undefined} onError={()=>setFailed(current=>current.includes(source)?current:[...current,source])}/>;
 }
