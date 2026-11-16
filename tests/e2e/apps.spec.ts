@@ -1,4 +1,6 @@
 import {test,expect} from '@playwright/test';
+import {mockRemoteDemoImages} from './demo-images';
+test.beforeEach(async({page})=>mockRemoteDemoImages(page));
 test('store app manifest, download hub and install guidance',async({page,request})=>{
   await page.setViewportSize({width:320,height:760});await page.goto('/apps');
   await expect(page.getByRole('heading',{name:'Your everyday. Now in your pocket.'})).toBeVisible();

@@ -1,9 +1,11 @@
 import { test,expect } from '@playwright/test';
+import {mockRemoteDemoImages} from './demo-images';
+test.beforeEach(async({page})=>mockRemoteDemoImages(page));
 test('storefront, categories, search, product variants and wishlist',async({page})=>{
   await page.goto('/');await expect(page.getByRole('heading',{name:'Stock up. Move forward.'})).toBeVisible();
   await page.screenshot({path:'artifacts/storefront-desktop.png',fullPage:true,caret:'initial'});
   await page.getByRole('textbox',{name:'Search products'}).fill('headphones');await page.getByRole('button',{name:'Submit search'}).click();await expect(page.getByRole('heading',{name:'Results for “headphones”'})).toBeVisible();
-  await page.getByRole('link',{name:'Studio wireless headphones',exact:true}).first().click();await expect(page.getByRole('button',{name:'Select your options'})).toBeDisabled();await page.getByRole('button',{name:'Warm white',exact:true}).click();await page.getByRole('button',{name:'Add to bag',exact:true}).click();await expect(page.getByRole('link',{name:'Shopping bag, 1 items'})).toBeVisible();
+  await page.getByRole('link',{name:'Studio wireless headphones',exact:true}).first().click();await expect(page.getByRole('heading',{name:'Studio wireless headphones',exact:true,level:1})).toBeVisible({timeout:15000});await expect(page.getByRole('button',{name:'Select your options'})).toBeDisabled();await page.getByRole('button',{name:'Warm white',exact:true}).click();await page.getByRole('button',{name:'Add to bag',exact:true}).click();await expect(page.getByRole('link',{name:'Shopping bag, 1 items'})).toBeVisible();
   await page.getByRole('button',{name:'Toggle wishlist'}).click();await page.goto('/wishlist');await expect(page.getByRole('heading',{name:'Studio wireless headphones'})).toBeVisible();
 });
 test('cart and checkout create a persistent unpaid reservation',async({page})=>{
